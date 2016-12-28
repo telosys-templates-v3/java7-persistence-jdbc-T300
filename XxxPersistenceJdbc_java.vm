@@ -1,0 +1,339 @@
+#checkId($entity)
+#parse("include/init_variables.vm")
+#parse("include/java_header.vm")
+##--------------------------------------------------------------------------------------------------------
+#set( $recordClass = "${entity.name}Record" )
+#set( $uncapitalizedEntityName = $fn.uncapitalize($entity.name) )
+#set( $jdbc = $jdbcFactory.getInstance($entity) )
+##--------------------------------------------------------------------------------------------------------
+
+package ${target.javaPackageFromFolder($SRC)};
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
+import javax.inject.Named;
+
+#foreach( $import in $java.imports($entity.keyAttributes) )
+import $import;
+#end
+
+import ${recordPackage}.${recordClass} ;
+import ${ROOT_PKG}.persistence.${entity.name}Persistence;
+import ${ROOT_PKG}.persistence.impl.jdbc.commons.GenericDAO;
+
+/**
+ * ${entity.name} persistence implementation 
+ * 
+ * @author Telosys
+ *
+ */
+@Named("${entity.name}Persistence")
+public class ${entity.name}PersistenceJdbc extends GenericDAO<${recordClass}> implements ${entity.name}Persistence {
+
+	private final static String SQL_SELECT_ALL = 
+		"$jdbc.sqlSelect"; 
+
+	private final static String SQL_SELECT = 
+		"$jdbc.sqlSelectWherePK";
+
+	private final static String SQL_INSERT = 
+		"$jdbc.sqlInsert";
+
+	private final static String SQL_UPDATE = 
+#if ( $entity.nonKeyAttributesCount > 0 )
+		"$jdbc.sqlUpdate";
+#else
+		"";
+		// NO DATA => INVALID UPDATE SQL STATEMENT : 
+		// "$jdbc.sqlUpdate"
+		// UPDATE IS NOT SUPPOSED TO BE USED FOR THIS ENTITY
+#end
+
+	private final static String SQL_DELETE = 
+		"$jdbc.sqlDelete";
+
+	private final static String SQL_COUNT_ALL = 
+		"$jdbc.sqlSelectCount";
+
+	private final static String SQL_COUNT = 
+		"$jdbc.sqlSelectCountWherePK";
+
+    //----------------------------------------------------------------------
+	/**
+	 * DAO constructor
+	 */
+	public ${entity.name}PersistenceJdbc() {
+		super();
+	}
+
+    //----------------------------------------------------------------------
+	@Override
+	protected void setValuesForPrimaryKey(PreparedStatement ps, int i, ${recordClass} $uncapitalizedEntityName) throws SQLException {
+		//--- Set PRIMARY KEY from bean to PreparedStatement ( SQL "WHERE key=?, ..." )
+#foreach( $attribute in $jdbc.attributesForPrimaryKey )
+		setValue(ps, i++, ${uncapitalizedEntityName}.${attribute.getter}() ) ; // "$attribute.databaseName" : $attribute.fullType
+#end
+	}
+
+    //----------------------------------------------------------------------
+	@Override
+	protected void setValuesForInsert(PreparedStatement ps, int i, ${recordClass} $uncapitalizedEntityName) throws SQLException {
+		//--- Set PRIMARY KEY and DATA from bean to PreparedStatement ( SQL "SET x=?, y=?, ..." )
+#foreach( $attribute in $entity.attributes )
+#if ( $attribute.isAutoIncremented() )
+		// "${attribute.databaseName}" is auto-incremented => no set in insert		
+#end#end
+#foreach( $attribute in $jdbc.attributesForInsert )
+		setValue(ps, i++, ${uncapitalizedEntityName}.${attribute.getter}() ) ; // "$attribute.databaseName" : $attribute.fullType
+##		ps.$jdbc.preparedStatementSetter($attribute)(i++, $jdbc.valueForPreparedStatement($attribute,${uncapitalizedEntityName}) ); // "$attribute.databaseName" : $attribute.fullType
+#end
+	}
+
+    //----------------------------------------------------------------------
+	@Override
+	protected void setValuesForUpdate(PreparedStatement ps, int i, ${recordClass} $uncapitalizedEntityName) throws SQLException {
+		//--- Set DATA from bean to PreparedStatement ( SQL "SET x=?, y=?, ..." )
+#foreach( $attribute in $jdbc.attributesForUpdate )
+		setValue(ps, i++, ${uncapitalizedEntityName}.${attribute.getter}() ) ; // "$attribute.databaseName" : $attribute.fullType
+#end
+		//--- Set PRIMARY KEY from bean to PreparedStatement ( SQL "WHERE key=?, ..." )
+#foreach( $attribute in $jdbc.attributesForPrimaryKey )
+		setValue(ps, i++, ${uncapitalizedEntityName}.${attribute.getter}() ) ; // "$attribute.databaseName" : $attribute.fullType
+#end
+	}
+
+	//----------------------------------------------------------------------
+	/**
+	 * Creates a new instance of the bean and populates it with the given primary value(s)
+#foreach( $attribute in $jdbc.attributesForPrimaryKey )
+	 * @param ${attribute.name};
+#end
+	 * @return the new instance
+	 */
+	private ${recordClass} newInstanceWithPrimaryKey( $fn.argumentsListWithWrapperType( $jdbc.attributesForPrimaryKey ) ) {
+		${recordClass} $uncapitalizedEntityName = new ${recordClass}();
+##		customer.setCode(code);
+#foreach( $attribute in $jdbc.attributesForPrimaryKey )
+		${uncapitalizedEntityName}.${attribute.setter}( ${attribute.name} );
+#end
+		return $uncapitalizedEntityName ;
+	}
+
+	//----------------------------------------------------------------------
+	@Override
+	protected ${recordClass} newInstance() {
+		return new ${recordClass}() ;
+	}
+
+    //----------------------------------------------------------------------
+	@Override
+	protected ${recordClass} populateBean(ResultSet rs, ${recordClass} $uncapitalizedEntityName) throws SQLException {
+
+		//--- Set data from ResultSet to Bean attributes
+#foreach( $attribute in $jdbc.attributesForSelect)
+		${uncapitalizedEntityName}.${attribute.setter}(rs.$jdbc.resultSetGetter($attribute)("$attribute.databaseName")); // $attribute.fullType
+#if ( $attribute.isNumberType() && $attribute.isPrimitiveType() == false )
+		if ( rs.wasNull() ) { ${uncapitalizedEntityName}.${attribute.setter}(null); }; // not primitive number => keep null value if any
+#end
+#end
+		return $uncapitalizedEntityName ;
+	}
+
+	//----------------------------------------------------------------------
+	/* (non-Javadoc)
+	 * @see interface 
+	 */
+	@Override
+	public ${recordClass} findById( $fn.argumentsListWithWrapperType( $jdbc.attributesForPrimaryKey ) ) {
+		${recordClass} $uncapitalizedEntityName = newInstanceWithPrimaryKey( $fn.argumentsList($jdbc.attributesForPrimaryKey) ) ;
+		if ( super.doSelect($uncapitalizedEntityName) ) {
+			return $uncapitalizedEntityName ;
+		}
+		else {
+			return null ; // Not found
+		}
+	}
+	//----------------------------------------------------------------------
+	/* (non-Javadoc)
+	 * @see interface 
+	 */
+	@Override
+	public List<${recordClass}> findAll() {
+		
+		// TODO 
+		// super.do
+
+		return null;
+	}
+
+	//----------------------------------------------------------------------
+	/**
+	 * Loads the given bean, it is supposed to contains the primary key value(s) in its attribute(s)<br>
+	 * If found, the given instance is populated with the values retrieved from the database<br>
+	 * If not found, the given instance remains unchanged
+	 * @param $uncapitalizedEntityName
+	 * @return true if found, false if not found
+	 */
+	//@Override
+	public boolean load( ${recordClass} $uncapitalizedEntityName ) {
+		return super.doSelect($uncapitalizedEntityName) ;
+	}
+
+    //----------------------------------------------------------------------
+	/**
+	 * Inserts the given bean in the database 
+	 * @param $uncapitalizedEntityName
+	 */
+	public long insert(${recordClass} ${uncapitalizedEntityName}) {
+#if ( $entity.hasAutoIncrementedKey() )
+		Long key = super.doInsertAutoIncr($uncapitalizedEntityName);
+		return key.longValue();
+#else
+		super.doInsert($uncapitalizedEntityName);
+		return 0L ;
+#end
+	}
+
+    //----------------------------------------------------------------------
+	/* (non-Javadoc)
+	 * @see interface 
+	 */
+	@Override
+	public ${recordClass} create(${recordClass} ${uncapitalizedEntityName}) {
+		insert($uncapitalizedEntityName);
+#if ( $entity.hasAutoIncrementedKey() )
+#else
+#end 
+		return ${uncapitalizedEntityName} ;
+	}	
+
+    //----------------------------------------------------------------------
+	/* (non-Javadoc)
+	 * @see interface 
+	 */
+	@Override
+##	public ${recordClass} update(${recordClass} $uncapitalizedEntityName) {
+	public boolean update(${recordClass} $uncapitalizedEntityName) {
+#if ( $entity.nonKeyAttributesCount > 0 )
+##		//int r = super.doUpdate($uncapitalizedEntityName);
+##		super.doUpdate($uncapitalizedEntityName);
+##		return $uncapitalizedEntityName ;
+		int r = super.doUpdate($uncapitalizedEntityName);
+		return r > 0 ;
+
+#else
+		//super.doUpdate($uncapitalizedEntityName);
+		throw new RuntimeException("No update for this entity (no data, only Primary Key)");
+#end
+	}	
+
+    //----------------------------------------------------------------------
+	/* (non-Javadoc)
+	 * @see interface 
+	 */
+	@Override
+	public ${recordClass} save(${recordClass} $uncapitalizedEntityName) {
+		if ( super.doExists($uncapitalizedEntityName) ) {
+			super.doUpdate($uncapitalizedEntityName);
+		}
+		else {
+			super.doInsert($uncapitalizedEntityName);
+		}
+		return $uncapitalizedEntityName ;
+	}	
+
+    //----------------------------------------------------------------------
+	/* (non-Javadoc)
+	 * @see interface 
+	 */
+	@Override
+	public boolean deleteById( $fn.argumentsListWithWrapperType( $jdbc.attributesForPrimaryKey ) ) {
+		${recordClass} $uncapitalizedEntityName = newInstanceWithPrimaryKey( $fn.argumentsList($jdbc.attributesForPrimaryKey) ) ;
+		int r = super.doDelete($uncapitalizedEntityName);
+		return r > 0 ;
+	}
+
+    //----------------------------------------------------------------------
+	/* (non-Javadoc)
+	 * @see interface 
+	 */
+	@Override
+	public boolean delete( ${recordClass} $uncapitalizedEntityName ) {
+		int r = super.doDelete($uncapitalizedEntityName);
+		return r > 0 ;
+	}
+
+    //----------------------------------------------------------------------
+	/**
+	 * Checks the existence of a record in the database using the given primary key value(s)
+#foreach( $attribute in $jdbc.attributesForPrimaryKey )
+	 * @param ${attribute.name};
+#end
+	 * @return
+	 */
+	// @Override
+	public boolean exists( $fn.argumentsListWithWrapperType( $jdbc.attributesForPrimaryKey ) ) {
+		${recordClass} $uncapitalizedEntityName = newInstanceWithPrimaryKey( $fn.argumentsList($jdbc.attributesForPrimaryKey) ) ;
+		return super.doExists($uncapitalizedEntityName);
+	}
+    //----------------------------------------------------------------------
+	/**
+	 * Checks the existence of the given bean in the database 
+	 * @param $uncapitalizedEntityName
+	 * @return
+	 */
+	// @Override
+	public boolean exists( ${recordClass} $uncapitalizedEntityName ) {
+		return super.doExists($uncapitalizedEntityName);
+	}
+
+    //----------------------------------------------------------------------
+	/**
+	 * Counts all the records present in the database
+	 * @return
+	 */
+	// @Override
+	public long count() {
+		return super.doCountAll();
+	}
+
+    //----------------------------------------------------------------------
+	@Override
+	protected String getSqlSelect() {
+		return SQL_SELECT ;
+	}
+    //----------------------------------------------------------------------
+	@Override
+	protected String getSqlSelectAll() {
+		return SQL_SELECT_ALL;
+	}
+    //----------------------------------------------------------------------
+	@Override
+	protected String getSqlInsert() {
+		return SQL_INSERT ;
+	}
+    //----------------------------------------------------------------------
+	@Override
+	protected String getSqlUpdate() {
+		return SQL_UPDATE ;
+	}
+    //----------------------------------------------------------------------
+	@Override
+	protected String getSqlDelete() {
+		return SQL_DELETE ;
+	}
+    //----------------------------------------------------------------------
+	@Override
+	protected String getSqlCount() {
+		return SQL_COUNT ;
+	}
+    //----------------------------------------------------------------------
+	@Override
+	protected String getSqlCountAll() {
+		return SQL_COUNT_ALL ;
+	}
+
+}

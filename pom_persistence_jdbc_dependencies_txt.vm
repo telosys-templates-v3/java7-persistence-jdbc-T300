@@ -1,0 +1,25 @@
+	<dependencies>
+
+		<!-- Add your JDBC driver here -->
+
+		<!-- Connection pool : Apache DBCP -->
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.4</version>
+		</dependency>
+		<!-- Connection pool : Hikari Connection Pool -->
+		<dependency>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+			<version>2.4.7</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<version>1.4.181</version>
+			<!-- <scope>test</scope> -->
+		</dependency>
+				
+	</dependencies>
