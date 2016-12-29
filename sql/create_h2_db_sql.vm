@@ -1,0 +1,12 @@
+/*
+   H2 test database schema creation 
+ */
+
+#foreach( $entity in $selectedEntities )
+/* Create table for entity $entity.name */
+#set( $createTableLines = $h2.ddlCreateTable($entity) )
+#foreach( $line in $createTableLines )
+${line}
+#end 
+
+#end 

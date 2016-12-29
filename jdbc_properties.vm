@@ -10,9 +10,14 @@ jdbc.url=$database.jdbcUrl
 jdbc.username=$database.user 
 jdbc.password=$database.password
 #else
-${SHARP} No database configuration : H2 is used as example
+${SHARP} Example of database configuration : H2 is used as example
+${SHARP}
+${SHARP} JDBC driver class 
 jdbc.driverClassName=org.h2.Driver
-jdbc.url=jdbc:h2:mem:test 
+${SHARP} JDBC URL : H2 database 'in memory' with initialization script for tables creation
+jdbc.url=jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'classpath:sql/create_h2_db.sql' 
+${SHARP} User name
 jdbc.username=sa 
+${SHARP} User password
 jdbc.password=sa
 #end

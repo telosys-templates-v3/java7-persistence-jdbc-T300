@@ -162,11 +162,7 @@ public class ${entity.name}PersistenceJdbc extends GenericDAO<${recordClass}> im
 	 */
 	@Override
 	public List<${recordClass}> findAll() {
-		
-		// TODO 
-		// super.do
-
-		return null;
+		return super.doSelectAll();
 	}
 
 	//----------------------------------------------------------------------
