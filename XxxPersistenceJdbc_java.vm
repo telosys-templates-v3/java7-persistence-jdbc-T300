@@ -1,8 +1,9 @@
 #checkId($entity)
-#parse("include/init_variables.vm")
+#parse("include/init_var_global.vm")
+#parse("include/init_var_entity.vm")
 #parse("include/java_header.vm")
 ##--------------------------------------------------------------------------------------------------------
-#set( $recordClass = "${entity.name}Record" )
+## #set( $recordClass = "${entity.name}Record" )
 #set( $uncapitalizedEntityName = $fn.uncapitalize($entity.name) )
 #set( $jdbc = $jdbcFactory.getInstance($entity) )
 ##--------------------------------------------------------------------------------------------------------
@@ -291,8 +292,8 @@ public class ${entity.name}PersistenceJdbc extends GenericDAO<${recordClass}> im
 	 * Counts all the records present in the database
 	 * @return
 	 */
-	// @Override
-	public long count() {
+	@Override
+	public long countAll() {
 		return super.doCountAll();
 	}
 

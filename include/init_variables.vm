@@ -1,3 +1,0 @@
-#set( $recordPackage  = "${ROOT_PKG}.data.record" )
-#set( $recordClass    = "${entity.name}Record" )
-#set( $recordInstance = $fn.uncapitalize($entity.name) )

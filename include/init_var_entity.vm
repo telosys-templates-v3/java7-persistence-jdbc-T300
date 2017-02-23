@@ -1,0 +1,8 @@
+## --- Variables with reference to the current $entity
+#set( $recordClass    = "${entity.name}Record" )
+#set( $recordInstance = $fn.uncapitalize($entity.name) )
+##
+#set( $persistenceInterface = "${entity.name}Persistence" )
+##
+#set( $jdbcServiceClass     = "${entity.name}PersistenceJdbc" )
+##
