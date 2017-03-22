@@ -15,17 +15,18 @@
 ##--------------------------------------------------------------------------------------------------------
 package ${target.javaPackageFromFolder($TEST_SRC)};
 
+#*
 #foreach( $import in $java.imports($entity.attributes) )
 import $import;
 #end
 import java.sql.SQLException;
+*#
 
-import ${recordPackage}.${recordClass} ;
+## import ${recordPackage}.${recordClass} ;
 import ${ROOT_PKG}.persistence.$persistenceInterface ;
 import ${ROOT_PKG}.persistence.impl.jdbc.commons.DAOTestUtil;
 import ${ROOT_PKG}.persistence.${entity.name}PersistenceGenericTest;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -52,112 +53,15 @@ public class ${entity.name}PersistenceJdbcTest extends ${entity.name}Persistence
 	}
 
 	@Test
-	public void testPersistenceService() throws SQLException {
+	public void testPersistenceService() {
 
     	$persistenceInterface persistenceService = new ${jdbcServiceClass}();
 
+#if ( $entity.hasAutoIncrementedKey() )
+    	testPersistenceServiceWithAutoincrementedKey(persistenceService);
+#else
     	testPersistenceService(persistenceService);
+#end
 	}	
-
-	//@Test
-	public void testDAO() throws SQLException {
-
-    	System.out.println("test ${entity.name}DAO ");
-##    	//$daoClass dao = DAOProvider.getDAO(${daoClass}.class);
-    	$daoClass dao = new $daoClass();
-
-
-    	Assert.assertTrue( dao.countAll() == 0 );
-
-    	${recordClass} $uncapitalizedEntityName = new ${recordClass}();
-		//--- Key values
-#if ( $entity.hasAutoIncrementedKey() )
-		// Auto-incremented key : nothing to set in the Primary Key
-#else
-#foreach( $attribute in $entity.keyAttributes )
-		${uncapitalizedEntityName}.${attribute.setter}($keyValues.getValue($attribute.name)); // "$attribute.databaseName" : $attribute.fullType
-#end
-#end
-		//--- Other values
-#foreach( $attribute in $entity.nonKeyAttributes )
-		${uncapitalizedEntityName}.${attribute.setter}($dataValues.getValue($attribute.name)); // "$attribute.databaseName" : $attribute.fullType
-#end
-
-    	//--- INSERT
-    	System.out.println("Insert : " + ${uncapitalizedEntityName} );
-#if ( $entity.hasAutoIncrementedKey() )
-    	$entity.autoincrementedKeyAttribute.type pkAutoIncr = (${entity.autoincrementedKeyAttribute.type}) dao.insert(${uncapitalizedEntityName});
-		${uncapitalizedEntityName}.${entity.autoincrementedKeyAttribute.setter}( pkAutoIncr );
-    	Assert.assertTrue( dao.exists(pkAutoIncr) );
-#else
-    	dao.insert(${uncapitalizedEntityName});
-    	Assert.assertTrue( dao.exists($keyValues.allValues) );
-#end
-    	Assert.assertTrue( dao.countAll() == 1 );
-    	Assert.assertTrue( dao.exists($uncapitalizedEntityName) );
-    	
-    	//--- FIND
-    	System.out.println("Find..." );
-#if ( $entity.hasAutoIncrementedKey() )
-    	${recordClass} ${uncapitalizedEntityName}2 = dao.findById(pkAutoIncr);
-#else
-    	${recordClass} ${uncapitalizedEntityName}2 = dao.findById($keyValues.allValues);
-#end
-    	Assert.assertNotNull(${uncapitalizedEntityName}2);
-#if ( $entity.hasAutoIncrementedKey() == false )
-#foreach( $attribute in $entity.keyAttributes )
-##		Assert.assertTrue( $keyValues.javaValueComparedTo("${uncapitalizedEntityName}2", $attribute) ) ;
-		Assert.assertTrue( $keyValues.comparisonStatement("${uncapitalizedEntityName}2", $attribute) ) ;
-#end
-#end
-    	Assert.assertTrue( dao.exists(${uncapitalizedEntityName}2) ) ;
-    	
-#if ( $entity.nonKeyAttributesCount > 0 )
-    	//--- UPDATE
-		//--- Change values
-#foreach( $attribute in $entity.nonKeyAttributes )
-		${uncapitalizedEntityName}2.${attribute.setter}($dataValues2.getValue($attribute.name)); // "$attribute.databaseName" : $attribute.fullType
-#end
-    	System.out.println("Update : " + ${uncapitalizedEntityName}2 );
-    	Assert.assertTrue( dao.update(${uncapitalizedEntityName}2) );
-#else
-    	//--- NO UPDATE FOR THIS ENTITY (ALL COLUMNS IN PRIMARY KEY)
-#end
-    	
-    	//--- LOAD
-    	${recordClass} ${uncapitalizedEntityName}3 = new ${recordClass}();
-#foreach( $attribute in $entity.keyAttributes )
-#if ( $entity.hasAutoIncrementedKey() )
-    	${uncapitalizedEntityName}3.${attribute.setter}( pkAutoIncr );
-#else
-    	${uncapitalizedEntityName}3.${attribute.setter}($keyValues.getValue($attribute.name));
-#end
-#end
-    	Assert.assertTrue( dao.load(${uncapitalizedEntityName}3) );
-    	System.out.println("Loaded : " + ${uncapitalizedEntityName}3 );
-#foreach( $attribute in $entity.nonKeyAttributes )
-		Assert.assertEquals(${uncapitalizedEntityName}2.${attribute.getter}(), ${uncapitalizedEntityName}3.${attribute.getter}() ); 
-#end
-
-
-#foreach( $attribute in $entity.keyAttributes )
-    	${uncapitalizedEntityName}3.${attribute.setter}($keyValues3.getValue($attribute.name));
-#end
-    	Assert.assertFalse( dao.load(${uncapitalizedEntityName}3) );
-    	
-    	//--- DELETE
-    	System.out.println("Delete : " + ${uncapitalizedEntityName}2 );
-    	Assert.assertTrue( dao.delete(${uncapitalizedEntityName}2) ); // Delete #1 : OK
-    	Assert.assertFalse( dao.delete(${uncapitalizedEntityName}2) ); // Nothing (already deleted)
-    	Assert.assertFalse( dao.deleteById($keyValues.allValues) ); // Nothing (already deleted)
-
-    	Assert.assertTrue( dao.countAll() == 0 );
-    	Assert.assertFalse( dao.exists($keyValues.allValues) ) ;
-    	Assert.assertFalse( dao.exists(${uncapitalizedEntityName}2) ) ;
-    	${uncapitalizedEntityName}2 = dao.findById($keyValues.allValues);
-    	Assert.assertNull( ${uncapitalizedEntityName}2 );
-    	
-    	System.out.println("Normal end of DAO test." );
-	}
 
 }

@@ -23,7 +23,7 @@ import $import;
 
 import ${recordPackage}.${recordClass} ;
 import ${ROOT_PKG}.persistence.${entity.name}Persistence;
-import ${ROOT_PKG}.persistence.impl.jdbc.commons.GenericDAO;
+import ${ROOT_PKG}.persistence.impl.jdbc.commons.GenericJdbcDAO;
 
 /**
  * ${entity.name} persistence implementation 
@@ -32,7 +32,7 @@ import ${ROOT_PKG}.persistence.impl.jdbc.commons.GenericDAO;
  *
  */
 @Named("${entity.name}Persistence")
-public class ${entity.name}PersistenceJdbc extends GenericDAO<${recordClass}> implements ${entity.name}Persistence {
+public class ${entity.name}PersistenceJdbc extends GenericJdbcDAO<${recordClass}> implements ${entity.name}Persistence {
 
 	private final static String SQL_SELECT_ALL = 
 		"$jdbc.sqlSelect"; 
@@ -68,6 +68,16 @@ public class ${entity.name}PersistenceJdbc extends GenericDAO<${recordClass}> im
 	 */
 	public ${entity.name}PersistenceJdbc() {
 		super();
+	}
+
+    //----------------------------------------------------------------------
+	@Override
+	protected void setAutoIncrementedKey(${recordClass} record, long value) {
+#if( $entity.hasAutoIncrementedKey() )
+		record.${entity.autoincrementedKeyAttribute.setter}((${entity.autoincrementedKeyAttribute.type})value);
+#else
+		throw new IllegalStateException("Unexpected call to method 'setAutoIncrementedKey'");
+#end
 	}
 
     //----------------------------------------------------------------------
