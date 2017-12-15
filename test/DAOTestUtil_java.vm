@@ -1,4 +1,4 @@
-#parse("../include/java_header.vm")
+#parse("/include/java_header.vm")
 
 package ${target.javaPackageFromFolder($TEST_SRC)};
 

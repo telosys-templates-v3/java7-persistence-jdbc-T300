@@ -1,7 +1,7 @@
 #checkId($entity)
-#parse("../include/init_var_global.vm")
-#parse("../include/init_var_entity.vm")
-#parse("../include/java_header.vm")
+#parse("/include/init_var_global.vm")
+#parse("/include/init_var_entity.vm")
+#parse("/include/java_header.vm")
 ##--------------------------------------------------------------------------------------------------------
 ##--------------------------------------------------------------------------------------------------------
 ## #set( $recordClass = "${entity.name}Record" )
